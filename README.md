@@ -2,7 +2,14 @@
 
 Tools to support production of OU print packs from Jupyter notebooks, quarto files, etc.
 
-__Requires `pandoc`__
+__Requires `pandoc`__ ;  on a Mac, also run:
+
+```
+brew install basictex
+
+sudo tlmgr update --self
+sudo tlmgr install multirow svg trimspaces
+```
 
 Support currently exists for:
 
