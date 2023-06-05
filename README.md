@@ -8,7 +8,7 @@ __Requires `pandoc`__ ;  on a Mac, also run:
 brew install basictex
 
 sudo tlmgr update --self
-sudo tlmgr install multirow svg trimspaces
+sudo tlmgr install multirow svg trimspaces transparent
 ```
 
 Support currently exists for:
