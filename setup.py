@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name="ou_print_pack_tools",
     packages=["ou_print_pack_tools"],
-    version='0.0.1',
+    version='0.0.2',
     author="Tony Hirst",
     author_email="tony.hirst@gmail.com",
     description="Generate print packs from Jupyter notebooks.",
