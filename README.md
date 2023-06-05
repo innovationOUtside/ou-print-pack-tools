@@ -2,6 +2,8 @@
 
 Tools to support production of OU print packs from Jupyter notebooks, quarto files, etc.
 
+__Requires `pandoc`__
+
 Support currently exists for:
 
 - generating OU branded PDF documents (one per notebook directory);
