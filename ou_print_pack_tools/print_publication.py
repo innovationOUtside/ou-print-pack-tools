@@ -18,6 +18,7 @@ import sys
 
 from pathlib import Path
 #import nbconvert
+from natsort import natsorted
 import nbformat
 from nbconvert import HTMLExporter
 #import pypandoc
@@ -28,9 +29,10 @@ import subprocess
 import fitz #pip install pymupdf
 
 @click.command()
+@click.option('-m', '--module', type=click.STRING, default="OU module", help="Module code and title")
 @click.option('--nbdir', '-n', default="content", help="Path to weekly content folders [content]", type=click.Path(exists=True))
 @click.option('--outdir', '-o', default="print_pack", help="Path to output dir [print_pack]", type=click.Path())
-def nb_to_print_pack(nbdir, outdir):
+def nb_to_print_pack(module, nbdir, outdir):
     """Generate print materials from Jupyter notebooks.
     """
     html_exporter = HTMLExporter(template_name = 'classic')
@@ -48,11 +50,13 @@ def nb_to_print_pack(nbdir, outdir):
 
     # Iterate through weekly content dirs
     # We assume the dir starts with a week number
-    for p in Path(nb_wd).glob("[0-9]*"):
-        print(f'- processing: {p}')
+    # or Part and the the week number
+    print(Path(nb_wd))
+
+    for p in natsorted(Path(nb_wd).glob("*[0-9]*"), key=str):
         if not p.is_dir():
             continue
-
+        print(f"Rendering {p} to PDF")
         # Get the week number
         weeknum = p.name.split(". ")[0]
         
@@ -60,7 +64,7 @@ def nb_to_print_pack(nbdir, outdir):
         pdoc_args = ['-s', '-V geometry:margin=1in',
                 '--toc',
                 #f'--resource-path="{p.resolve()}"', # Doesn't work?
-                '--metadata', f'title="TM129 Robotics — Week {weeknum}"']
+                '--metadata', f'title="{module} — Week {weeknum}"']
         
         #cd to week directory
         os.chdir(p)
@@ -77,14 +81,17 @@ def nb_to_print_pack(nbdir, outdir):
             (body, resources) = html_exporter.from_notebook_node(nb)
             with open(_tmp_dir / _nb.name.replace(".ipynb", ".html"), "w") as f:
                 f.write(body)
-                
+        
+        module_code = module.split()[0]
+        #print(_tmp_dir, os.listdir(_tmp_dir))
+
         # Now convert the HTML files to PDF
         # We need to run pandoc in the correct directory so that
         # relatively linked image files are correctly picked up.
         
         # Specify output PDF path
-        pdf_out = str(pwd / pdf_output_dir / f"tm129_{weeknum}.pdf")
-        epub_out = str(pwd / pdf_output_dir / f"tm129_{weeknum}.epub")
+        pdf_out = str(pwd / pdf_output_dir / f"{module_code}_{weeknum}.pdf")
+        epub_out = str(pwd / pdf_output_dir / f"{module_code}_{weeknum}.epub")
         
         # It seems pypandoc is not sorting the files in ToC etc?
         #pypandoc.convert_file(f"{temp_dir}/*html",
@@ -96,8 +103,12 @@ def nb_to_print_pack(nbdir, outdir):
         # Hacky - requires IPython
         # #! pandoc -s -o {pdf_out} -V geometry:margin=1in --toc --metadata title="TM129 Robotics — Week {weeknum}"  {_tmp_dir}/*html
         # #! pandoc -s -o {epub_out} --metadata title="TM129 Robotics — Week {weeknum}" --metadata author="The Open University, 2022" {_tmp_dir}/*html
-        subprocess.call(f'pandoc --quiet -s -o {pdf_out} -V geometry:margin=1in --toc --metadata title="TM129 Robotics — Week {weeknum}"  {_tmp_dir}/*html', shell = True)
-        subprocess.call(f'pandoc --quiet -s -o {epub_out} --metadata title="TM129 Robotics — Week {weeknum}" --metadata author="The Open University, 2022" {_tmp_dir}/*html', shell = True)
+
+        _command = f'pandoc --quiet -s -o "{pdf_out}" -V geometry:margin=1in --toc --metadata title="{module} — Week {weeknum}"  {_tmp_dir}/*html'
+ 
+        subprocess.call(_command, shell = True)
+
+        subprocess.call(f'pandoc --quiet -s -o "{epub_out}" --metadata title="TM129 Robotics — Week {weeknum}" --metadata author="The Open University, 2023" {_tmp_dir}/*html', shell = True)
 
         # Tidy up tmp dir
         shutil.rmtree(_tmp_dir)
@@ -123,7 +134,7 @@ def nb_to_print_pack(nbdir, outdir):
     # define the position (upper-left corner)
     logo_container = fitz.Rect(60,40,143,105)
 
-    for f in Path(pdf_output_dir).glob("*.pdf"):
+    for f in natsorted(Path(pdf_output_dir).glob("*.pdf"), key=str):
         print(f'- branding: {f}')
         with fitz.open(f) as pdf:
             pdf_first_page = pdf[0]

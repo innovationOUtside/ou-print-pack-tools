@@ -15,7 +15,8 @@ setup(
                       "ipython",
                       "nbconvert",
                       "nbformat",
-                      "pymupdf"
+                      "pymupdf",
+                      "natsort"
                       ],
     include_package_data=True,
     package_data={'': ['resources/*']},
