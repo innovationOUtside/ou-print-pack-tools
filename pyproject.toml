@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "ou_print_pack_tools"
+version = "0.0.3"
+description = "Generate print packs from Jupyter notebooks."
+authors = ["Tony Hirst <tony.hirst@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+click = "^8.0"
+ipython = "^7.0"
+nbconvert = "^6.0"
+nbformat = "^5.0"
+pymupdf = "^1.22"
+natsort = "^7.1"
+
+[tool.poetry.scripts]
+ou_nb_print_pack = "ou_print_pack_tools.print_publication:nb_to_print_pack"
+ou_nb_brandify = "ou_print_pack_tools.print_publication:brandify"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
