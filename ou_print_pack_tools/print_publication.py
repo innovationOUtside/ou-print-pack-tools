@@ -28,11 +28,50 @@ import shutil
 import subprocess
 import fitz #pip install pymupdf
 
+def add_logo(pdf_output_dir, year=2023):
+    # Add an OU logo to the first page of the PDF documents
+    # Add copyright notice
+
+    pkgdir = sys.modules['ou_print_pack_tools'].__path__[0]
+    fullpath = Path(pkgdir) / "resources"
+    logo_file = fullpath / "OU-logo-83x65.png"
+    img = open(logo_file, "rb").read()
+
+    # define the position (upper-left corner)
+    logo_container = fitz.Rect(60,40,143,105)
+
+    for f in natsorted(Path(pdf_output_dir).glob("*.pdf"), key=str):
+        if f.name.endswith("_logo.pdf"):
+            continue
+        print(f'- branding: {f}')
+        with fitz.open(f) as pdf:
+            pdf_first_page = pdf[0]
+            pdf_first_page.insert_image(logo_container, stream=img)
+            pdf_out = f.name.replace(".pdf", "_logo.pdf")
+            
+            txt_origin = fitz.Point(350, 770)
+            text = f"Copyright © The Open University, {year}"
+            
+            for page in pdf:
+                page.insert_text(txt_origin, text)
+
+            pdf.save(Path(pdf_output_dir) / pdf_out)
+        #Remove the unbranded PDF
+        os.remove(f)
+
+@click.command()
+@click.option('--outdir', '-o', default="print_pack", help="Path to output dir [print_pack]", type=click.Path())
+@click.option('-y', '--year', type=click.STRING, default="2023", help="Copyright year")
+def brandify(outdir, year=2023):
+    """Brand a PDF with OU logo and copyright notice. """
+    add_logo(outdir, year)
+
 @click.command()
 @click.option('-m', '--module', type=click.STRING, default="OU module", help="Module code and title")
 @click.option('--nbdir', '-n', default="content", help="Path to weekly content folders [content]", type=click.Path(exists=True))
 @click.option('--outdir', '-o', default="print_pack", help="Path to output dir [print_pack]", type=click.Path())
-def nb_to_print_pack(module, nbdir, outdir):
+@click.option('-y', '--year', type=click.STRING, default="2023", help="Copyright year")
+def nb_to_print_pack(module, nbdir, outdir, year):
     """Generate print materials from Jupyter notebooks.
     """
     html_exporter = HTMLExporter(template_name = 'classic')
@@ -104,7 +143,7 @@ def nb_to_print_pack(module, nbdir, outdir):
         # #! pandoc -s -o {pdf_out} -V geometry:margin=1in --toc --metadata title="TM129 Robotics — Week {weeknum}"  {_tmp_dir}/*html
         # #! pandoc -s -o {epub_out} --metadata title="TM129 Robotics — Week {weeknum}" --metadata author="The Open University, 2022" {_tmp_dir}/*html
 
-        _command = f'pandoc --quiet -s -o "{pdf_out}" -V geometry:margin=1in --toc --metadata title="{module} — Week {weeknum}"  {_tmp_dir}/*html'
+        _command = f'pandoc --pdf-engine=xelatex --quiet -s -o "{pdf_out}" -V geometry:margin=1in --toc --metadata title="{module} — Week {weeknum}"  {_tmp_dir}/*html'
  
         subprocess.call(_command, shell = True)
 
@@ -121,35 +160,6 @@ def nb_to_print_pack(module, nbdir, outdir):
 
     os.chdir(pwd)
 
-    # ## Add OU Logo to First Page of PDF
-    #
-    # Add an OU logo to the first page of the PDF documents
-
-    # +
-    pkgdir = sys.modules['ou_print_pack_tools'].__path__[0]
-    fullpath = Path(pkgdir) / "resources"
-    logo_file = fullpath / "OU-logo-83x65.png"
-    img = open(logo_file, "rb").read()
-
-    # define the position (upper-left corner)
-    logo_container = fitz.Rect(60,40,143,105)
-
-    for f in natsorted(Path(pdf_output_dir).glob("*.pdf"), key=str):
-        print(f'- branding: {f}')
-        with fitz.open(f) as pdf:
-            pdf_first_page = pdf[0]
-            pdf_first_page.insert_image(logo_container, stream=img)
-            pdf_out = f.name.replace(".pdf", "_logo.pdf")
-            
-            txt_origin = fitz.Point(350, 770)
-            text = "Copyright © The Open University, 2023"
-            
-            for page in pdf:
-                page.insert_text(txt_origin, text)
-
-            pdf.save(Path(pdf_output_dir) / pdf_out)
-        #Remove the unbranded PDF
-        os.remove(f)
-    # -
+    add_logo(pdf_output_dir, year)
 
 

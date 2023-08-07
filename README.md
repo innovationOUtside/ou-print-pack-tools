@@ -24,7 +24,21 @@ Usage: ou_nb_print_pack [OPTIONS]
   Generate print materials from Jupyter notebooks.
 
 Options:
+  -m, --module TEXT  Module code and title
   -n, --nbdir PATH   Path to weekly content folders [content]
   -o, --outdir PATH  Path to output dir [print_pack]
+  -y, --year TEXT    Copyright year
+  --help             Show this message and exit.
+```
+
+```text
+Usage: ou_nb_brandify [OPTIONS]
+
+  A
+
+Options:
+  -n, --nbdir PATH   Path to weekly content folders [content]
+  -o, --outdir PATH  Path to output dir [print_pack]
+  -y, --year TEXT    Copyright year
   --help             Show this message and exit.
 ```
