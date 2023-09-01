@@ -42,5 +42,6 @@ Options:
   -X, --logo-x INTEGER    Logo x co-ord
   -Y, --logo-y INTEGER    Logo y co-ord
   -s, --logo-scale FLOAT  Logo scale
+  -S, --logo-size TEXT    Logo size: S, M, L
   --help                  Show this message and exit.
 ```

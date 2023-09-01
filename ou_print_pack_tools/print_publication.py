@@ -17,84 +17,125 @@ import os
 import sys
 
 from pathlib import Path
-#import nbconvert
+
+# import nbconvert
 from natsort import natsorted
 import nbformat
 from nbconvert import HTMLExporter
-#import pypandoc
+
+# import pypandoc
 import os
 import secrets
 import shutil
 import subprocess
-import fitz #pip install pymupdf
+import fitz  # pip install pymupdf
 from PIL import Image
 import tempfile
 
-def add_logo(pdf_output_dir, year=2023, logo_x=60, logo_y=40,
-             scale=1.0):
+
+def add_logo(pdf_output_dir, year=2023, logo_x=60, logo_y=40, size="L", scale=1.0):
     # Add an OU logo to the first page of the PDF documents
     # Add copyright notice
 
-    pkgdir = sys.modules['ou_print_pack_tools'].__path__[0]
+    pkgdir = sys.modules["ou_print_pack_tools"].__path__[0]
     fullpath = Path(pkgdir) / "resources"
-    logo_file = fullpath / "OU-logo-83x65.png"
-    logo_w = int(scale * 83)
-    logo_h = int(scale * 65)
-    image = Image.open(logo_file)
-    resized_image = image.resize((logo_w, logo_h))
-    with tempfile.NamedTemporaryFile(delete=True, suffix=".png") as temp_file:
-        resized_image.save(temp_file, format="PNG")
-        img = open(temp_file.name, "rb").read()
+    if size != "L":
+        if size == "S":
+            logo_file = fullpath / "OU-logo-36x28.png"
+            img = open(logo_file, "rb").read()
+            logo_w = 36
+            logo_h = 28
+        elif size == "M":
+            logo_file = fullpath / "OU-logo-53x42.png"
+            img = open(logo_file, "rb").read()
+            logo_w = 53
+            logo_h = 42
+    else:
+        logo_file = fullpath / "OU-logo-83x65.png"
+        logo_w = int(scale * 83)
+        logo_h = int(scale * 65)
+        image = Image.open(logo_file)
+        resized_image = image.resize((logo_w, logo_h))
+        with tempfile.NamedTemporaryFile(delete=True, suffix=".png") as temp_file:
+            resized_image.save(temp_file, format="PNG")
+            img = open(temp_file.name, "rb").read()
 
     # define the position (upper-left corner)
-    logo_container = fitz.Rect(logo_x,logo_y,
-                               logo_x+logo_w, logo_y+logo_h)
+    logo_container = fitz.Rect(logo_x, logo_y, logo_x + logo_w, logo_y + logo_h)
 
     for f in natsorted(Path(pdf_output_dir).glob("*.pdf"), key=str):
         if f.name.endswith("_logo.pdf"):
             continue
-        print(f'- branding: {f}')
+        print(f"- branding: {f}")
         with fitz.open(f) as pdf:
             pdf_first_page = pdf[0]
             pdf_first_page.insert_image(logo_container, stream=img)
             pdf_out = f.name.replace(".pdf", "_logo.pdf")
-            
+
             txt_origin = fitz.Point(350, 770)
             text = f"Copyright © The Open University, {year}"
-            
+
             for page in pdf:
                 page.insert_text(txt_origin, text)
 
             pdf.save(Path(pdf_output_dir) / pdf_out)
-        #Remove the unbranded PDF
+        # Remove the unbranded PDF
         os.remove(f)
 
-@click.command()
-@click.option('--outdir', '-o', default="print_pack", help="Path to output dir [print_pack]", type=click.Path())
-@click.option('-y', '--year', type=click.STRING, default="2023", help="Copyright year")
-@click.option('-X', '--logo-x', type=click.INT, default=60, help="Logo x co-ord")
-@click.option('-Y', '--logo-y', type=click.INT, default=40, help="Logo y co-ord")
-@click.option('-s', '--logo-scale', type=click.FLOAT, default=1.0, help="Logo scale")
-def brandify(outdir, year, logo_x, logo_y, logo_scale):
-    """Brand a PDF with OU logo and copyright notice. """
-    add_logo(outdir, year, logo_x, logo_y, logo_scale)
 
 @click.command()
-@click.option('-m', '--module', type=click.STRING, default="OU module", help="Module code and title")
-@click.option('--nbdir', '-n', default="content", help="Path to weekly content folders [content]", type=click.Path(exists=True))
-@click.option('--outdir', '-o', default="print_pack", help="Path to output dir [print_pack]", type=click.Path())
-@click.option('-y', '--year', type=click.STRING, default="2023", help="Copyright year")
+@click.option(
+    "--outdir",
+    "-o",
+    default="print_pack",
+    help="Path to output dir [print_pack]",
+    type=click.Path(),
+)
+@click.option("-y", "--year", type=click.STRING, default="2023", help="Copyright year")
+@click.option("-X", "--logo-x", type=click.INT, default=60, help="Logo x co-ord")
+@click.option("-Y", "--logo-y", type=click.INT, default=40, help="Logo y co-ord")
+@click.option("-s", "--logo-scale", type=click.FLOAT, default=1.0, help="Logo scale")
+@click.option(
+    "-S", "--logo-size", type=click.STRING, default="L", help="Logo size: S, M, L"
+)
+def brandify(outdir, year, logo_x, logo_y, logo_scale, logo_size):
+    """Brand a PDF with OU logo and copyright notice."""
+    add_logo(outdir, year, logo_x, logo_y, logo_size, logo_scale)
+
+
+@click.command()
+@click.option(
+    "-m",
+    "--module",
+    type=click.STRING,
+    default="OU module",
+    help="Module code and title",
+)
+@click.option(
+    "--nbdir",
+    "-n",
+    default="content",
+    help="Path to weekly content folders [content]",
+    type=click.Path(exists=True),
+)
+@click.option(
+    "--outdir",
+    "-o",
+    default="print_pack",
+    help="Path to output dir [print_pack]",
+    type=click.Path(),
+)
+@click.option("-y", "--year", type=click.STRING, default="2023", help="Copyright year")
 def nb_to_print_pack(module, nbdir, outdir, year):
-    """Generate print materials from Jupyter notebooks.
-    """
-    html_exporter = HTMLExporter(template_name = 'classic')
+    """Generate print materials from Jupyter notebooks."""
+    html_exporter = HTMLExporter(template_name="classic")
 
     pwd = Path.cwd()
-    print(f'Starting in: {pwd}')
+    print(f"Starting in: {pwd}")
 
     # +
-    nb_wd = nbdir #"content" # Path to weekly content folders
-    pdf_output_dir = outdir #"print_pack" # Path to output dir
+    nb_wd = nbdir  # "content" # Path to weekly content folders
+    pdf_output_dir = outdir  # "print_pack" # Path to output dir
 
     # Create print pack output dir if required
     Path(pdf_output_dir).mkdir(parents=True, exist_ok=True)
@@ -111,14 +152,18 @@ def nb_to_print_pack(module, nbdir, outdir, year):
         print(f"Rendering {p} to PDF")
         # Get the week number
         weeknum = p.name.split(". ")[0]
-        
+
         # Settings for pandoc
-        pdoc_args = ['-s', '-V geometry:margin=1in',
-                '--toc',
-                #f'--resource-path="{p.resolve()}"', # Doesn't work?
-                '--metadata', f'title="{module} — Week {weeknum}"']
-        
-        #cd to week directory
+        pdoc_args = [
+            "-s",
+            "-V geometry:margin=1in",
+            "--toc",
+            # f'--resource-path="{p.resolve()}"', # Doesn't work?
+            "--metadata",
+            f'title="{module} — Week {weeknum}"',
+        ]
+
+        # cd to week directory
         os.chdir(p)
 
         # Create a tmp directory for html files
@@ -133,46 +178,47 @@ def nb_to_print_pack(module, nbdir, outdir, year):
             (body, resources) = html_exporter.from_notebook_node(nb)
             with open(_tmp_dir / _nb.name.replace(".ipynb", ".html"), "w") as f:
                 f.write(body)
-        
+
         module_code = module.split()[0]
-        #print(_tmp_dir, os.listdir(_tmp_dir))
+        # print(_tmp_dir, os.listdir(_tmp_dir))
 
         # Now convert the HTML files to PDF
         # We need to run pandoc in the correct directory so that
         # relatively linked image files are correctly picked up.
-        
+
         # Specify output PDF path
         pdf_out = str(pwd / pdf_output_dir / f"{module_code}_{weeknum}.pdf")
         epub_out = str(pwd / pdf_output_dir / f"{module_code}_{weeknum}.epub")
-        
+
         # It seems pypandoc is not sorting the files in ToC etc?
-        #pypandoc.convert_file(f"{temp_dir}/*html",
+        # pypandoc.convert_file(f"{temp_dir}/*html",
         #                   to='pdf',
         #                   #format='html',
         #                   extra_args=pdoc_args,
         #                   outputfile= str(pwd / pdf_output_dir / f"tm129_{weeknum}.pdf"))
-        
+
         # Hacky - requires IPython
         # #! pandoc -s -o {pdf_out} -V geometry:margin=1in --toc --metadata title="TM129 Robotics — Week {weeknum}"  {_tmp_dir}/*html
         # #! pandoc -s -o {epub_out} --metadata title="TM129 Robotics — Week {weeknum}" --metadata author="The Open University, 2022" {_tmp_dir}/*html
 
         _command = f'pandoc --pdf-engine=xelatex --quiet -s -o "{pdf_out}" -V geometry:margin=1in --toc --metadata title="{module} — Week {weeknum}"  {_tmp_dir}/*html'
- 
-        subprocess.call(_command, shell = True)
 
-        subprocess.call(f'pandoc --quiet -s -o "{epub_out}" --metadata title="TM129 Robotics — Week {weeknum}" --metadata author="The Open University, 2023" {_tmp_dir}/*html', shell = True)
+        subprocess.call(_command, shell=True)
+
+        subprocess.call(
+            f'pandoc --quiet -s -o "{epub_out}" --metadata title="TM129 Robotics — Week {weeknum}" --metadata author="The Open University, 2023" {_tmp_dir}/*html',
+            shell=True,
+        )
 
         # Tidy up tmp dir
         shutil.rmtree(_tmp_dir)
-        
-        #Just in case we need to know relatively where we are...
-        #Path.cwd().relative_to(pwd)
-        
+
+        # Just in case we need to know relatively where we are...
+        # Path.cwd().relative_to(pwd)
+
         # Go back to the home dir
         os.chdir(pwd)
 
     os.chdir(pwd)
 
     add_logo(pdf_output_dir, year)
-
-
