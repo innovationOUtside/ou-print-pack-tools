@@ -32,13 +32,15 @@ Options:
 ```
 
 ```text
-Usage: ou_nb_brandify [OPTIONS]
+Usage: ou_pdf_brandify [OPTIONS]
 
-  A
+  Brand a PDF with OU logo and copyright notice.
 
 Options:
-  -n, --nbdir PATH   Path to weekly content folders [content]
-  -o, --outdir PATH  Path to output dir [print_pack]
-  -y, --year TEXT    Copyright year
-  --help             Show this message and exit.
+  -o, --outdir PATH       Path to output dir [print_pack]
+  -y, --year TEXT         Copyright year
+  -X, --logo-x INTEGER    Logo x co-ord
+  -Y, --logo-y INTEGER    Logo y co-ord
+  -s, --logo-scale FLOAT  Logo scale
+  --help                  Show this message and exit.
 ```

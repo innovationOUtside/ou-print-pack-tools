@@ -27,18 +27,28 @@ import secrets
 import shutil
 import subprocess
 import fitz #pip install pymupdf
+from PIL import Image
+import tempfile
 
-def add_logo(pdf_output_dir, year=2023):
+def add_logo(pdf_output_dir, year=2023, logo_x=60, logo_y=40,
+             scale=1.0):
     # Add an OU logo to the first page of the PDF documents
     # Add copyright notice
 
     pkgdir = sys.modules['ou_print_pack_tools'].__path__[0]
     fullpath = Path(pkgdir) / "resources"
     logo_file = fullpath / "OU-logo-83x65.png"
-    img = open(logo_file, "rb").read()
+    logo_w = int(scale * 83)
+    logo_h = int(scale * 65)
+    image = Image.open(logo_file)
+    resized_image = image.resize((logo_w, logo_h))
+    with tempfile.NamedTemporaryFile(delete=True, suffix=".png") as temp_file:
+        resized_image.save(temp_file, format="PNG")
+        img = open(temp_file.name, "rb").read()
 
     # define the position (upper-left corner)
-    logo_container = fitz.Rect(60,40,143,105)
+    logo_container = fitz.Rect(logo_x,logo_y,
+                               logo_x+logo_w, logo_y+logo_h)
 
     for f in natsorted(Path(pdf_output_dir).glob("*.pdf"), key=str):
         if f.name.endswith("_logo.pdf"):
@@ -62,9 +72,12 @@ def add_logo(pdf_output_dir, year=2023):
 @click.command()
 @click.option('--outdir', '-o', default="print_pack", help="Path to output dir [print_pack]", type=click.Path())
 @click.option('-y', '--year', type=click.STRING, default="2023", help="Copyright year")
-def brandify(outdir, year=2023):
+@click.option('-X', '--logo-x', type=click.INT, default=60, help="Logo x co-ord")
+@click.option('-Y', '--logo-y', type=click.INT, default=40, help="Logo y co-ord")
+@click.option('-s', '--logo-scale', type=click.FLOAT, default=1.0, help="Logo scale")
+def brandify(outdir, year, logo_x, logo_y, logo_scale):
     """Brand a PDF with OU logo and copyright notice. """
-    add_logo(outdir, year)
+    add_logo(outdir, year, logo_x, logo_y, logo_scale)
 
 @click.command()
 @click.option('-m', '--module', type=click.STRING, default="OU module", help="Module code and title")
