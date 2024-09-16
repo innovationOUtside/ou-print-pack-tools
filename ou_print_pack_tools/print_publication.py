@@ -33,7 +33,7 @@ from PIL import Image
 import tempfile
 
 
-def add_logo(pdf_output_dir, year=2023, logo_x=60, logo_y=40, size="L", scale=1.0):
+def add_logo(pdf_output_dir, year=2023, logo_x=60, logo_y=40, size="L", scale=1.0, remove=False):
     # Add an OU logo to the first page of the PDF documents
     # Add copyright notice
 
@@ -43,22 +43,24 @@ def add_logo(pdf_output_dir, year=2023, logo_x=60, logo_y=40, size="L", scale=1.
         if size == "S":
             logo_file = fullpath / "OU-logo-36x28.png"
             img = open(logo_file, "rb").read()
-            logo_w = 36
-            logo_h = 28
+            logo_w, logo_h = img.size
         elif size == "M":
             logo_file = fullpath / "OU-logo-53x42.png"
             img = open(logo_file, "rb").read()
-            logo_w = 53
-            logo_h = 42
+            logo_w, logo_h = img.size
+        elif size == "C":
+            logo_file = fullpath / "OU_Master_LOGO_BLACK_63mm.png"
+            img = open(logo_file, "rb").read()
+            logo_w, logo_h = Image.open(logo_file).size
     else:
-        logo_file = fullpath / "OU-logo-83x65.png"
-        logo_w = int(scale * 83)
-        logo_h = int(scale * 65)
+        logo_file = fullpath / "OU_Master_LOGO_BLACK_63mm.png"
         image = Image.open(logo_file)
-        resized_image = image.resize((logo_w, logo_h))
-        with tempfile.NamedTemporaryFile(delete=True, suffix=".png") as temp_file:
-            resized_image.save(temp_file, format="PNG")
-            img = open(temp_file.name, "rb").read()
+        logo_w, logo_h = image.size
+
+        img = open(logo_file, "rb").read()
+
+    logo_w = int(scale * logo_w)
+    logo_h = int(scale * logo_h)
 
     # define the position (upper-left corner)
     logo_container = fitz.Rect(logo_x, logo_y, logo_x + logo_w, logo_y + logo_h)
@@ -80,7 +82,8 @@ def add_logo(pdf_output_dir, year=2023, logo_x=60, logo_y=40, size="L", scale=1.
 
             pdf.save(Path(pdf_output_dir) / pdf_out)
         # Remove the unbranded PDF
-        os.remove(f)
+        if remove:
+            os.remove(f)
 
 
 @click.command()
@@ -91,7 +94,7 @@ def add_logo(pdf_output_dir, year=2023, logo_x=60, logo_y=40, size="L", scale=1.
     help="Path to output dir [print_pack]",
     type=click.Path(),
 )
-@click.option("-y", "--year", type=click.STRING, default="2023", help="Copyright year")
+@click.option("-y", "--year", type=click.STRING, default="2024", help="Copyright year")
 @click.option("-X", "--logo-x", type=click.INT, default=60, help="Logo x co-ord")
 @click.option("-Y", "--logo-y", type=click.INT, default=40, help="Logo y co-ord")
 @click.option("-s", "--logo-scale", type=click.FLOAT, default=1.0, help="Logo scale")

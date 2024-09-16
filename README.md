@@ -42,6 +42,10 @@ Options:
   -X, --logo-x INTEGER    Logo x co-ord
   -Y, --logo-y INTEGER    Logo y co-ord
   -s, --logo-scale FLOAT  Logo scale
-  -S, --logo-size TEXT    Logo size: S, M, L
+  -S, --logo-size TEXT    Logo size: S, M, L, C [C is only new brand logo]
   --help                  Show this message and exit.
 ```
+
+Example usage - brand all PDFs in `testdir/`:
+
+`ou_pdf_brandify -o testdir/ -S C -s 0.2`
